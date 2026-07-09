@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Checkout — FreshBite</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="header"></div>
+
+  <main class="container section" id="checkoutMain">
+    <h1 style="margin-bottom:24px;">Checkout 🧾</h1>
+
+    <div class="cart-layout" id="checkoutLayout">
+      <form class="form-card" id="checkoutForm" novalidate>
+        <h3 style="margin-bottom:16px;">📍 Delivery Address</h3>
+        <div class="form-grid">
+          <div class="form-field">
+            <label for="fName">Full Name *</label>
+            <input id="fName" required placeholder="e.g. Yug Patel">
+            <span class="field-err"></span>
+          </div>
+          <div class="form-field">
+            <label for="fPhone">Phone *</label>
+            <input id="fPhone" type="tel" required placeholder="10-digit mobile number" maxlength="10">
+            <span class="field-err"></span>
+          </div>
+          <div class="form-field full">
+            <label for="fAddress">Street Address *</label>
+            <input id="fAddress" required placeholder="Flat / house no., building, street">
+            <span class="field-err"></span>
+          </div>
+          <div class="form-field">
+            <label for="fCity">City *</label>
+            <input id="fCity" required placeholder="City">
+            <span class="field-err"></span>
+          </div>
+          <div class="form-field">
+            <label for="fPin">PIN Code *</label>
+            <input id="fPin" required placeholder="6-digit PIN" maxlength="6">
+            <span class="field-err"></span>
+          </div>
+        </div>
+
+        <h3 style="margin:22px 0 12px;">⏰ Delivery Time</h3>
+        <div class="radio-cards">
+          <label class="radio-card"><input type="radio" name="dtime" value="ASAP (25–40 min)" checked><span><span class="rc-emoji">⚡</span>ASAP<br><small>25–40 min</small></span></label>
+          <label class="radio-card"><input type="radio" name="dtime" value="Lunch (12:30–1:30 PM)"><span><span class="rc-emoji">🌤️</span>Lunch<br><small>12:30–1:30 PM</small></span></label>
+          <label class="radio-card"><input type="radio" name="dtime" value="Evening (6:00–7:00 PM)"><span><span class="rc-emoji">🌆</span>Evening<br><small>6:00–7:00 PM</small></span></label>
+          <label class="radio-card"><input type="radio" name="dtime" value="Dinner (8:00–9:00 PM)"><span><span class="rc-emoji">🌙</span>Dinner<br><small>8:00–9:00 PM</small></span></label>
+        </div>
+
+        <h3 style="margin:22px 0 12px;">💳 Payment Method</h3>
+        <div class="radio-cards">
+          <label class="radio-card"><input type="radio" name="pay" value="Cash on Delivery" checked><span><span class="rc-emoji">💵</span>Cash on Delivery</span></label>
+          <label class="radio-card"><input type="radio" name="pay" value="UPI"><span><span class="rc-emoji">📱</span>UPI</span></label>
+          <label class="radio-card"><input type="radio" name="pay" value="Card"><span><span class="rc-emoji">💳</span>Card</span></label>
+        </div>
+
+        <div id="cardFields" hidden style="margin-top:16px;">
+          <div class="form-grid">
+            <div class="form-field full">
+              <label for="cardNum">Card Number (simulation — do not enter a real card)</label>
+              <input id="cardNum" placeholder="4242 4242 4242 4242" maxlength="19">
+            </div>
+            <div class="form-field">
+              <label for="cardExp">Expiry</label>
+              <input id="cardExp" placeholder="MM/YY" maxlength="5">
+            </div>
+            <div class="form-field">
+              <label for="cardCvv">CVV</label>
+              <input id="cardCvv" placeholder="•••" maxlength="3" type="password">
+            </div>
+          </div>
+        </div>
+
+        <button class="btn btn-block" type="submit" style="margin-top:22px;" id="placeOrderBtn">Place Order 🎉</button>
+        <p style="font-size:0.78rem; color:var(--brown-soft); text-align:center; margin-top:10px;">
+          Demo project — no real payment is processed and no food will arrive (sadly).
+        </p>
+      </form>
+
+      <div class="summary-card" id="orderSummary"></div>
+    </div>
+  </main>
+
+  <div id="footer"></div>
+
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    FB.init("");
+
+    const cart = FB.getCart();
+    const coupon = sessionStorage.getItem("fb_coupon") || "";
+
+    if (!cart.length) {
+      document.getElementById("checkoutLayout").innerHTML = `
+        <div class="empty-state" style="grid-column:1/-1;">
+          <span class="es-emoji">🛒</span>
+          <h3>Nothing to check out</h3>
+          <p>Your cart is empty — add some dishes first.</p>
+          <a class="btn" href="menu.html">Browse Menu</a>
+        </div>`;
+    } else {
+      const t = FB.cartTotals(coupon);
+      document.getElementById("orderSummary").innerHTML = `
+        <h3>Order Summary</h3>
+        ${cart.map(l => {
+          const m = FB.findItem(l.id);
+          return `<div class="sum-row"><span>${m.emoji} ${m.name} × ${l.qty}</span><span>${FB.money(m.price * l.qty)}</span></div>`;
+        }).join("")}
+        <div class="sum-row" style="border-top:2px dashed var(--orange-soft); padding-top:10px; margin-top:8px;"><span>Subtotal</span><span>${FB.money(t.subtotal)}</span></div>
+        ${t.discount ? `<div class="sum-row"><span>Coupon (${coupon})</span><span class="free">− ${FB.money(t.discount)}</span></div>` : ""}
+        <div class="sum-row"><span>Delivery Fee</span><span>${t.delivery === 0 ? '<span class="free">FREE</span>' : FB.money(t.delivery)}</span></div>
+        <div class="sum-row"><span>Taxes (5%)</span><span>${FB.money(t.tax)}</span></div>
+        <div class="sum-row total"><span>To Pay</span><span>${FB.money(t.total)}</span></div>`;
+
+      // Prefill from logged-in user
+      const user = FB.getUser();
+      if (user) {
+        document.getElementById("fName").value = user.name || "";
+        document.getElementById("fPhone").value = user.phone || "";
+        const addr = (user.addresses || [])[0];
+        if (addr) {
+          document.getElementById("fAddress").value = addr.street;
+          document.getElementById("fCity").value = addr.city;
+          document.getElementById("fPin").value = addr.pin;
+        }
+      }
+
+      // Show card fields only for Card payment
+      document.querySelectorAll('input[name="pay"]').forEach(r =>
+        r.addEventListener("change", () =>
+          document.getElementById("cardFields").hidden = document.querySelector('input[name="pay"]:checked').value !== "Card"));
+
+      // Validation
+      function check(id, test, msg) {
+        const el = document.getElementById(id);
+        const err = el.closest(".form-field").querySelector(".field-err");
+        const ok = test(el.value.trim());
+        err.textContent = ok ? "" : msg;
+        return ok;
+      }
+
+      document.getElementById("checkoutForm").addEventListener("submit", e => {
+        e.preventDefault();
+        const valid =
+          check("fName", v => v.length >= 2, "Please enter your name") &
+          check("fPhone", v => /^\d{10}$/.test(v), "Enter a valid 10-digit phone") &
+          check("fAddress", v => v.length >= 5, "Please enter your address") &
+          check("fCity", v => v.length >= 2, "Please enter your city") &
+          check("fPin", v => /^\d{6}$/.test(v), "Enter a valid 6-digit PIN");
+        if (!valid) { FB.toast("Please fix the highlighted fields"); return; }
+
+        const order = {
+          id: "FB" + Date.now().toString().slice(-8),
+          placedAt: Date.now(),
+          items: cart.map(l => ({ id: l.id, qty: l.qty, name: FB.findItem(l.id).name, price: FB.findItem(l.id).price, emoji: FB.findItem(l.id).emoji })),
+          totals: t,
+          coupon: t.couponOk ? coupon : "",
+          address: {
+            name: document.getElementById("fName").value.trim(),
+            phone: document.getElementById("fPhone").value.trim(),
+            street: document.getElementById("fAddress").value.trim(),
+            city: document.getElementById("fCity").value.trim(),
+            pin: document.getElementById("fPin").value.trim()
+          },
+          deliveryTime: document.querySelector('input[name="dtime"]:checked').value,
+          payment: document.querySelector('input[name="pay"]:checked').value
+        };
+
+        FB.addOrder(order);
+        // Save address to profile for next time
+        if (user) FB.updateUser({ addresses: [order.address, ...(user.addresses || []).filter(a => a.street !== order.address.street)].slice(0, 3) });
+        FB.clearCart();
+        sessionStorage.removeItem("fb_coupon");
+
+        document.getElementById("checkoutMain").innerHTML = `
+          <div class="success-box">
+            <span class="ok-emoji">✅</span>
+            <h2 style="margin:12px 0 6px;">Order Placed!</h2>
+            <p style="color:var(--brown-soft);">Order <strong>#${order.id}</strong> · ${FB.money(t.total)} · ${order.payment}</p>
+            <p style="color:var(--brown-soft); margin:8px 0 22px;">Delivery: ${order.deliveryTime}<br>Your food is being prepared — track it live in your account. 🛵</p>
+            <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
+              <a class="btn" href="account.html#orders">Track Order</a>
+              <a class="btn btn-outline" href="index.html">Back to Home</a>
+            </div>
+          </div>`;
+        window.scrollTo({ top: 0 });
+      });
+    }
+  </script>
+</body>
+</html>

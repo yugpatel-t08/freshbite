@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contact Us — FreshBite</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="header"></div>
+
+  <main>
+    <section class="page-hero">
+      <div class="container">
+        <h1>Contact Us 📞</h1>
+        <p>Questions, feedback or a burning craving? We're all ears.</p>
+      </div>
+    </section>
+
+    <section class="container" style="padding-bottom:56px;">
+      <div class="two-col" style="align-items:start;">
+        <div>
+          <div class="form-card" style="margin-bottom:24px;">
+            <h3 style="margin-bottom:14px;">Reach us directly</h3>
+            <ul class="contact-info-list">
+              <li><span class="ci-emoji">📍</span><span><strong>FreshBite HQ</strong><br>21 Hill Road, Bandra West,<br>Mumbai, Maharashtra 400050</span></li>
+              <li><span class="ci-emoji">📞</span><span><strong>Phone</strong><br><a href="tel:+912212345678" style="color:var(--orange); font-weight:700;">+91 22 1234 5678</a></span></li>
+              <li><span class="ci-emoji">✉️</span><span><strong>Email</strong><br><a href="mailto:hello@freshbite.example" style="color:var(--orange); font-weight:700;">hello@freshbite.example</a></span></li>
+              <li><span class="ci-emoji">🕐</span><span><strong>Hours</strong><br>Mon–Sun · 10:00 AM – 11:00 PM<br><span style="color:var(--green); font-weight:800;">● Open now for delivery</span></span></li>
+            </ul>
+          </div>
+          <iframe class="map-frame" title="FreshBite HQ location map" loading="lazy"
+            src="https://www.openstreetmap.org/export/embed.html?bbox=72.8180%2C19.0480%2C72.8420%2C19.0640&layer=mapnik&marker=19.0560%2C72.8300">
+          </iframe>
+        </div>
+
+        <form class="form-card" id="contactForm" novalidate>
+          <h3 style="margin-bottom:14px;">Send us a message 💌</h3>
+          <div class="form-field">
+            <label for="cName">Your Name *</label>
+            <input id="cName" required placeholder="e.g. Yug Patel">
+            <span class="field-err"></span>
+          </div>
+          <div class="form-field">
+            <label for="cEmail">Email *</label>
+            <input id="cEmail" type="email" required placeholder="you@example.com">
+            <span class="field-err"></span>
+          </div>
+          <div class="form-field">
+            <label for="cTopic">Topic</label>
+            <select id="cTopic">
+              <option>Order issue</option>
+              <option>Feedback</option>
+              <option>Partner with us</option>
+              <option>Something else</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label for="cMsg">Message *</label>
+            <textarea id="cMsg" rows="5" required placeholder="Tell us what's on your mind…"></textarea>
+            <span class="field-err"></span>
+          </div>
+          <button class="btn btn-block" type="submit">Send Message 🚀</button>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <div id="footer"></div>
+
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    FB.init("contact.html");
+
+    function check(id, test, msg) {
+      const el = document.getElementById(id);
+      const err = el.closest(".form-field").querySelector(".field-err");
+      const ok = test(el.value.trim());
+      err.textContent = ok ? "" : msg;
+      return ok;
+    }
+
+    document.getElementById("contactForm").addEventListener("submit", e => {
+      e.preventDefault();
+      const valid =
+        check("cName", v => v.length >= 2, "Please enter your name") &
+        check("cEmail", v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v), "Enter a valid email") &
+        check("cMsg", v => v.length >= 10, "Message should be at least 10 characters");
+      if (!valid) return;
+      e.target.reset();
+      FB.toast("Message sent! We'll get back to you within 24 hours 💌");
+    });
+  </script>
+</body>
+</html>

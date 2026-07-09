@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Restaurants — FreshBite</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="header"></div>
+
+  <main>
+    <section class="page-hero">
+      <div class="container">
+        <h1>Restaurants near you 🏪</h1>
+        <p>Handpicked kitchens serving fresh, delicious food. Filter by cuisine, rating or price.</p>
+      </div>
+    </section>
+
+    <section class="container" style="padding-bottom:56px;">
+      <div class="filter-bar">
+        <label for="cuisineFilter">Cuisine</label>
+        <select id="cuisineFilter"><option value="">All cuisines</option></select>
+        <label for="ratingFilter">Rating</label>
+        <select id="ratingFilter">
+          <option value="0">Any rating</option>
+          <option value="4">4.0+</option>
+          <option value="4.5">4.5+</option>
+        </select>
+        <label for="priceFilter">Price</label>
+        <select id="priceFilter">
+          <option value="0">Any price</option>
+          <option value="1">₹ — Budget</option>
+          <option value="2">₹₹ — Mid-range</option>
+          <option value="3">₹₹₹ — Premium</option>
+        </select>
+        <span id="resultCount" style="margin-left:auto; font-weight:800; color:var(--brown-soft); font-size:0.88rem;"></span>
+      </div>
+
+      <div class="card-grid" id="restoGrid"></div>
+      <div class="empty-state" id="emptyState" hidden>
+        <span class="es-emoji">🔍</span>
+        <h3>No restaurants match those filters</h3>
+        <p>Try widening your search — good food is worth it.</p>
+        <button class="btn" id="clearFilters">Clear Filters</button>
+      </div>
+    </section>
+  </main>
+
+  <div id="footer"></div>
+
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    FB.init("restaurants.html");
+
+    const cuisineSel = document.getElementById("cuisineFilter");
+    const ratingSel = document.getElementById("ratingFilter");
+    const priceSel = document.getElementById("priceFilter");
+
+    [...new Set(RESTAURANTS.map(r => r.cuisine))].sort().forEach(c => {
+      cuisineSel.insertAdjacentHTML("beforeend", `<option>${c}</option>`);
+    });
+
+    // Pre-select cuisine from ?cuisine= (home page category links)
+    const qCuisine = FB.qs("cuisine");
+    if (qCuisine && [...cuisineSel.options].some(o => o.value === qCuisine)) cuisineSel.value = qCuisine;
+
+    function render() {
+      const list = RESTAURANTS.filter(r =>
+        (!cuisineSel.value || r.cuisine === cuisineSel.value) &&
+        r.rating >= parseFloat(ratingSel.value) &&
+        (priceSel.value === "0" || r.priceLevel === parseInt(priceSel.value))
+      );
+      document.getElementById("resultCount").textContent = `${list.length} restaurant${list.length === 1 ? "" : "s"}`;
+      document.getElementById("emptyState").hidden = list.length > 0;
+      document.getElementById("restoGrid").innerHTML = list.map(r => `
+        <a class="resto-card" href="menu.html?restaurant=${r.id}">
+          ${r.offer ? `<span class="badge badge-offer">🎁 ${r.offer}</span>` : ""}
+          <div class="card-img">${r.emoji}</div>
+          <div class="card-body">
+            <h3>${r.name}</h3>
+            <p class="card-desc">${r.tagline}</p>
+            <div class="card-meta">
+              <span class="rating">★ ${r.rating}</span>
+              <span>${r.cuisine}</span> · <span>${FB.priceLevel(r.priceLevel)}</span> · <span>⏱ ${r.deliveryTime}</span>
+            </div>
+          </div>
+        </a>`).join("");
+    }
+
+    [cuisineSel, ratingSel, priceSel].forEach(el => el.addEventListener("change", render));
+    document.getElementById("clearFilters").onclick = () => {
+      cuisineSel.value = ""; ratingSel.value = "0"; priceSel.value = "0"; render();
+    };
+    render();
+  </script>
+</body>
+</html>

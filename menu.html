@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Menu — FreshBite</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="header"></div>
+
+  <main>
+    <section class="page-hero">
+      <div class="container">
+        <h1 id="menuTitle">Our Menu 🍽️</h1>
+        <p id="menuSub">Every dish, from every kitchen — search, filter and feast.</p>
+      </div>
+    </section>
+
+    <section class="container" style="padding-bottom:56px;">
+      <div class="filter-bar">
+        <input type="search" id="searchInput" placeholder="🔍 Search dishes…" style="flex:1; min-width:180px;">
+        <div class="chip-row" id="dietChips">
+          <button class="chip active" data-diet="">All</button>
+          <button class="chip" data-diet="veg">🟢 Veg</button>
+          <button class="chip" data-diet="nonveg">🔴 Non-Veg</button>
+          <button class="chip" data-diet="gf">🌾 Gluten-Free</button>
+        </div>
+      </div>
+
+      <div class="chip-row" id="categoryChips" style="margin-bottom:24px;"></div>
+
+      <div class="card-grid" id="menuGrid"></div>
+      <div class="empty-state" id="emptyState" hidden>
+        <span class="es-emoji">🍽️</span>
+        <h3>No dishes found</h3>
+        <p>Try a different search or filter combination.</p>
+      </div>
+    </section>
+  </main>
+
+  <div id="footer"></div>
+
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    FB.init("menu.html");
+
+    const rid = FB.qs("restaurant");
+    const resto = rid ? FB.findRestaurant(rid) : null;
+    const baseMenu = resto ? MENU.filter(m => m.rid === rid) : MENU;
+
+    if (resto) {
+      document.getElementById("menuTitle").textContent = `${resto.emoji} ${resto.name}`;
+      document.getElementById("menuSub").textContent =
+        `${resto.tagline} · ★ ${resto.rating} · ${resto.cuisine} · ⏱ ${resto.deliveryTime}`;
+      document.title = `${resto.name} — FreshBite`;
+    }
+
+    let activeDiet = "", activeCategory = "";
+
+    const cats = [...new Set(baseMenu.map(m => m.category))];
+    document.getElementById("categoryChips").innerHTML =
+      `<button class="chip active" data-cat="">All Categories</button>` +
+      cats.map(c => `<button class="chip" data-cat="${c}">${c}</button>`).join("");
+
+    function render() {
+      const q = document.getElementById("searchInput").value.toLowerCase().trim();
+      const list = baseMenu.filter(m =>
+        (!q || m.name.toLowerCase().includes(q) || m.desc.toLowerCase().includes(q)) &&
+        (!activeCategory || m.category === activeCategory) &&
+        (!activeDiet || (activeDiet === "gf" ? m.gf : m.diet === activeDiet))
+      );
+      document.getElementById("emptyState").hidden = list.length > 0;
+      document.getElementById("menuGrid").innerHTML = list.map(FB.foodCardHTML).join("");
+    }
+
+    document.getElementById("dietChips").addEventListener("click", e => {
+      const btn = e.target.closest(".chip"); if (!btn) return;
+      document.querySelectorAll("#dietChips .chip").forEach(c => c.classList.remove("active"));
+      btn.classList.add("active");
+      activeDiet = btn.dataset.diet;
+      render();
+    });
+
+    document.getElementById("categoryChips").addEventListener("click", e => {
+      const btn = e.target.closest(".chip"); if (!btn) return;
+      document.querySelectorAll("#categoryChips .chip").forEach(c => c.classList.remove("active"));
+      btn.classList.add("active");
+      activeCategory = btn.dataset.cat;
+      render();
+    });
+
+    document.getElementById("searchInput").addEventListener("input", render);
+    render();
+  </script>
+</body>
+</html>

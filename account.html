@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Account — FreshBite</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="header"></div>
+
+  <main class="container section">
+    <h1 style="margin-bottom:24px;">My Account 👤</h1>
+    <div class="account-layout">
+      <nav class="account-nav" id="accountNav">
+        <button data-tab="profile" class="active">👤 Profile</button>
+        <button data-tab="orders">📦 Order History</button>
+        <button data-tab="addresses">📍 Saved Addresses</button>
+        <button data-tab="wishlist">❤️ Wishlist</button>
+        <button id="logoutBtn" style="color:var(--red);">🚪 Logout</button>
+      </nav>
+      <div id="tabContent"></div>
+    </div>
+  </main>
+
+  <div id="footer"></div>
+
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    FB.init("");
+    const user = FB.getUser();
+    if (!user) location.href = "login.html";
+
+    const content = document.getElementById("tabContent");
+    const statusOrder = ["Order Placed", "Preparing", "Out for Delivery", "Delivered"];
+
+    const tabs = {
+      profile() {
+        const u = FB.getUser();
+        content.innerHTML = `
+        <div class="form-card">
+          <div style="display:flex; align-items:center; gap:16px; margin-bottom:20px;">
+            <span style="font-size:3.4rem;">🧑‍🍳</span>
+            <div>
+              <h2 style="font-size:1.3rem;">${u.name}</h2>
+              <p style="color:var(--brown-soft); font-size:0.9rem;">FreshBite foodie since 2026</p>
+            </div>
+          </div>
+          <form id="profileForm">
+            <div class="form-grid">
+              <div class="form-field"><label>Full Name</label><input id="pName" value="${u.name}"></div>
+              <div class="form-field"><label>Phone</label><input id="pPhone" value="${u.phone || ""}" maxlength="10"></div>
+              <div class="form-field full"><label>Email (login id)</label><input value="${u.email}" disabled></div>
+            </div>
+            <button class="btn" type="submit">Save Changes</button>
+          </form>
+        </div>`;
+        document.getElementById("profileForm").addEventListener("submit", e => {
+          e.preventDefault();
+          FB.updateUser({ name: document.getElementById("pName").value.trim() || u.name,
+                          phone: document.getElementById("pPhone").value.trim() });
+          FB.toast("Profile updated ✅");
+          FB.renderHeader("");
+        });
+      },
+
+      orders() {
+        const orders = FB.getOrders();
+        if (!orders.length) {
+          content.innerHTML = `
+            <div class="empty-state">
+              <span class="es-emoji">📦</span>
+              <h3>No orders yet</h3>
+              <p>Your delicious history will appear here.</p>
+              <a class="btn" href="menu.html">Order Something</a>
+            </div>`;
+          return;
+        }
+        content.innerHTML = orders.map(o => {
+          const s = FB.orderStatus(o);
+          return `
+          <div class="order-card">
+            <div class="order-head">
+              <div>
+                <strong>#${o.id}</strong>
+                <span style="color:var(--brown-soft); font-size:0.85rem;"> · ${new Date(o.placedAt).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}</span>
+              </div>
+              <span class="status-tag ${s.cls}">${s.label}</span>
+            </div>
+            <div class="track-bar">${[1,2,3,4].map(i => `<div class="seg ${i <= s.step ? "on" : ""}"></div>`).join("")}</div>
+            <div class="track-labels">${statusOrder.map(l => `<span>${l}</span>`).join("")}</div>
+            <p style="margin-top:12px; font-size:0.92rem;">${o.items.map(i => `${i.emoji} ${i.name} × ${i.qty}`).join(" · ")}</p>
+            <div style="display:flex; justify-content:space-between; margin-top:8px; flex-wrap:wrap; gap:8px;">
+              <span style="color:var(--brown-soft); font-size:0.88rem;">${o.payment} · ${o.deliveryTime} · to ${o.address.city}</span>
+              <strong class="price" style="font-size:1.05rem;">${FB.money(o.totals.total)}</strong>
+            </div>
+          </div>`;
+        }).join("") + `<p style="font-size:0.8rem; color:var(--brown-soft);">Tracking is simulated — status advances automatically after you place an order. Refresh to update.</p>`;
+      },
+
+      addresses() {
+        const u = FB.getUser();
+        const list = u.addresses || [];
+        content.innerHTML = `
+        <div class="form-card">
+          <h3 style="margin-bottom:14px;">Saved Addresses</h3>
+          ${list.length ? list.map(a => `
+            <div class="addr-card">
+              <strong>${a.name}</strong> · ${a.phone}<br>
+              <span style="color:var(--brown-soft); font-size:0.92rem;">${a.street}, ${a.city} — ${a.pin}</span>
+            </div>`).join("")
+          : `<p style="color:var(--brown-soft);">No saved addresses yet — they're saved automatically when you place an order.</p>`}
+        </div>`;
+      },
+
+      wishlist() {
+        const items = FB.getWishlist().map(FB.findItem).filter(Boolean);
+        content.innerHTML = items.length
+          ? `<div class="card-grid" style="grid-template-columns:repeat(auto-fill,minmax(230px,1fr));">${items.map(FB.foodCardHTML).join("")}</div>`
+          : `<div class="empty-state">
+              <span class="es-emoji">❤️</span>
+              <h3>Wishlist is empty</h3>
+              <p>Tap the 🤍 on any dish to save it for later.</p>
+              <a class="btn" href="menu.html">Find Favourites</a>
+            </div>`;
+      }
+    };
+
+    const nav = document.getElementById("accountNav");
+    nav.addEventListener("click", e => {
+      const btn = e.target.closest("[data-tab]");
+      if (!btn) return;
+      nav.querySelectorAll("button").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      tabs[btn.dataset.tab]();
+    });
+    document.getElementById("logoutBtn").onclick = () => FB.logout();
+
+    // Re-render wishlist tab when a heart is toggled from within it
+    document.addEventListener("fb:wishlist-changed", () => {
+      if (nav.querySelector(".active")?.dataset.tab === "wishlist") tabs.wishlist();
+    });
+
+    // Deep link: account.html#orders (also reacts to hash changes while on the page)
+    function openFromHash() {
+      const tab = location.hash === "#orders" ? "orders" : "profile";
+      nav.querySelectorAll("button").forEach(b => b.classList.remove("active"));
+      nav.querySelector(`[data-tab="${tab}"]`).classList.add("active");
+      tabs[tab]();
+    }
+    window.addEventListener("hashchange", openFromHash);
+    openFromHash();
+  </script>
+</body>
+</html>

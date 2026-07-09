@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your Cart — FreshBite</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="header"></div>
+
+  <main class="container section">
+    <h1 style="margin-bottom:24px;">Your Cart 🛒</h1>
+    <div id="cartContent"></div>
+  </main>
+
+  <div id="footer"></div>
+
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    FB.init("cart.html");
+
+    function render() {
+      const cart = FB.getCart();
+      const box = document.getElementById("cartContent");
+
+      if (!cart.length) {
+        box.innerHTML = `
+          <div class="empty-state">
+            <span class="es-emoji">🛒</span>
+            <h3>Your cart is empty</h3>
+            <p>Hungry? Let's fix that — browse our menu and add something tasty.</p>
+            <a class="btn" href="menu.html">Browse Menu</a>
+          </div>`;
+        return;
+      }
+
+      const coupon = sessionStorage.getItem("fb_coupon") || "";
+      const t = FB.cartTotals(coupon);
+
+      box.innerHTML = `
+      <div class="cart-layout">
+        <div>
+          ${cart.map(l => {
+            const m = FB.findItem(l.id);
+            const r = FB.findRestaurant(m.rid);
+            return `
+            <div class="cart-item">
+              <a class="ci-img" href="product.html?id=${m.id}">${m.emoji}</a>
+              <div>
+                <h4>${m.name}</h4>
+                <div class="ci-sub">${r.name} · ${FB.money(m.price)} each</div>
+                <div class="ci-sub">${FB.dietBadge(m)}</div>
+              </div>
+              <div class="ci-right">
+                <div class="qty-stepper">
+                  <button data-dec="${m.id}" aria-label="Decrease">−</button>
+                  <span class="qty-val">${l.qty}</span>
+                  <button data-inc="${m.id}" aria-label="Increase">+</button>
+                </div>
+                <strong class="price" style="font-size:1rem;">${FB.money(m.price * l.qty)}</strong>
+                <button class="remove-btn" data-remove="${m.id}">✕ Remove</button>
+              </div>
+            </div>`;
+          }).join("")}
+          <a href="menu.html" style="color:var(--orange); font-weight:800;">+ Add more items</a>
+        </div>
+
+        <div class="summary-card">
+          <h3>Order Summary</h3>
+          <div class="coupon-row">
+            <input id="couponInput" placeholder="Coupon code" value="${coupon}">
+            <button class="btn btn-sm" id="applyCoupon">Apply</button>
+          </div>
+          <div class="coupon-msg ${t.couponOk ? "ok" : "err"}">${t.couponMsg}</div>
+          <div class="sum-row"><span>Subtotal</span><span>${FB.money(t.subtotal)}</span></div>
+          ${t.discount ? `<div class="sum-row"><span>Discount</span><span class="free">− ${FB.money(t.discount)}</span></div>` : ""}
+          <div class="sum-row"><span>Delivery Fee</span><span>${t.delivery === 0 ? '<span class="free">FREE</span>' : FB.money(t.delivery)}</span></div>
+          <div class="sum-row"><span>Taxes (5%)</span><span>${FB.money(t.tax)}</span></div>
+          <div class="sum-row total"><span>Total</span><span>${FB.money(t.total)}</span></div>
+          <p style="font-size:0.8rem; color:var(--brown-soft); margin-bottom:14px;">Free delivery on orders above ₹499 🛵</p>
+          <a class="btn btn-block" href="checkout.html">Proceed to Checkout →</a>
+        </div>
+      </div>`;
+
+      document.getElementById("applyCoupon").onclick = () => {
+        sessionStorage.setItem("fb_coupon", document.getElementById("couponInput").value.trim().toUpperCase());
+        render();
+      };
+    }
+
+    document.addEventListener("click", e => {
+      const inc = e.target.closest("[data-inc]");
+      const dec = e.target.closest("[data-dec]");
+      const rem = e.target.closest("[data-remove]");
+      if (inc) { FB.setQty(inc.dataset.inc, FB.getCart().find(l => l.id === inc.dataset.inc).qty + 1); render(); }
+      if (dec) { FB.setQty(dec.dataset.dec, FB.getCart().find(l => l.id === dec.dataset.dec).qty - 1); render(); }
+      if (rem) { FB.removeFromCart(rem.dataset.remove); FB.toast("Item removed"); render(); }
+    });
+
+    render();
+  </script>
+</body>
+</html>
